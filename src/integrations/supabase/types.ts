@@ -14,7 +14,89 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      leads: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          message: string | null
+          name: string
+          phone: string | null
+          property_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+          message?: string | null
+          name: string
+          phone?: string | null
+          property_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          message?: string | null
+          name?: string
+          phone?: string | null
+          property_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "leads_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      properties: {
+        Row: {
+          address: string
+          bathrooms: number | null
+          bedrooms: number | null
+          created_at: string
+          description: string | null
+          id: string
+          image_url: string | null
+          is_pocket_listing: boolean
+          price: number
+          sqft: number | null
+          status: string
+          title: string
+        }
+        Insert: {
+          address: string
+          bathrooms?: number | null
+          bedrooms?: number | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          is_pocket_listing?: boolean
+          price: number
+          sqft?: number | null
+          status?: string
+          title: string
+        }
+        Update: {
+          address?: string
+          bathrooms?: number | null
+          bedrooms?: number | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          is_pocket_listing?: boolean
+          price?: number
+          sqft?: number | null
+          status?: string
+          title?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
