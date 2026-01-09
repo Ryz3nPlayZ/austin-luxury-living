@@ -6,85 +6,8 @@ import PropertyCard from "@/components/properties/PropertyCard";
 import FilterBar from "@/components/properties/FilterBar";
 import QuickViewModal from "@/components/properties/QuickViewModal";
 import { Property } from "@/types/property";
-
-import property1 from "@/assets/property-1.jpg";
-import property2 from "@/assets/property-2.jpg";
-import property3 from "@/assets/property-3.jpg";
-
-const mockProperties: Property[] = [
-  {
-    id: "1",
-    images: [property1, property2, property3, property1, property2],
-    price: 2850000,
-    address: "4521 WESTLAKE DRIVE",
-    neighborhood: "Westlake",
-    beds: 5,
-    baths: 4,
-    sqft: 4200,
-    status: "New",
-    isPocket: false,
-  },
-  {
-    id: "2",
-    images: [property2, property1, property3, property2, property1],
-    price: 1950000,
-    address: "2847 TARRYTOWN ROAD",
-    neighborhood: "Tarrytown",
-    beds: 4,
-    baths: 3,
-    sqft: 3100,
-    status: null,
-    isPocket: false,
-  },
-  {
-    id: "3",
-    images: [property3, property1, property2, property3, property1],
-    price: 3200000,
-    address: "901 BALCONES DRIVE",
-    neighborhood: "Balcones",
-    beds: 6,
-    baths: 5,
-    sqft: 5500,
-    status: "Under Contract",
-    isPocket: false,
-  },
-  {
-    id: "4",
-    images: [property1, property3, property2, property1, property3],
-    price: 4100000,
-    address: "1200 LAKE AUSTIN BLVD",
-    neighborhood: "Lake Austin",
-    beds: 5,
-    baths: 6,
-    sqft: 6200,
-    status: null,
-    isPocket: true,
-  },
-  {
-    id: "5",
-    images: [property2, property3, property1, property2, property3],
-    price: 1750000,
-    address: "3456 BARTON HILLS DR",
-    neighborhood: "Barton Hills",
-    beds: 3,
-    baths: 2,
-    sqft: 2400,
-    status: "New",
-    isPocket: true,
-  },
-  {
-    id: "6",
-    images: [property3, property2, property1, property3, property2],
-    price: 2200000,
-    address: "789 CLARKSVILLE LANE",
-    neighborhood: "Clarksville",
-    beds: 4,
-    baths: 3,
-    sqft: 3800,
-    status: null,
-    isPocket: false,
-  },
-];
+import { useProperties } from "@/hooks/useProperties";
+import { Loader2 } from "lucide-react";
 
 const Properties = () => {
   const [showPocket, setShowPocket] = useState(false);
@@ -94,10 +17,12 @@ const Properties = () => {
   const [bedsFilter, setBedsFilter] = useState<string>("all");
   const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
 
-  const filteredProperties = mockProperties.filter((property) => {
+  const { data: properties = [], isLoading, error } = useProperties();
+
+  const filteredProperties = properties.filter((property) => {
     // Pocket filter
-    if (showPocket && !property.isPocket) return false;
-    if (!showPocket && property.isPocket) return false;
+    if (showPocket && !property.is_pocket_listing) return false;
+    if (!showPocket && property.is_pocket_listing) return false;
 
     // Price filter
     if (priceFilter !== "all") {
@@ -106,18 +31,22 @@ const Properties = () => {
       if (!max && property.price < min) return false;
     }
 
-    // Neighborhood filter
-    if (neighborhoodFilter !== "all" && property.neighborhood !== neighborhoodFilter) return false;
+    // Neighborhood filter - need to derive from address for now
+    if (neighborhoodFilter !== "all") {
+      const addressParts = property.address.toUpperCase().split(",");
+      const neighborhood = addressParts[0];
+      const selectedArea = neighborhoodFilter.toUpperCase();
+      if (!neighborhood.includes(selectedArea)) return false;
+    }
 
     // Beds filter
-    if (bedsFilter !== "all" && property.beds < parseInt(bedsFilter)) return false;
+    if (bedsFilter !== "all" && property.bedrooms && property.bedrooms < parseInt(bedsFilter)) return false;
 
     return true;
   });
 
   const handlePocketToggle = (enabled: boolean) => {
     if (enabled && !pocketUnlocked) {
-      // Would show email gate modal here
       setPocketUnlocked(true);
     }
     setShowPocket(enabled);
@@ -160,7 +89,33 @@ const Properties = () => {
       {/* Properties Grid */}
       <section className="section-padding py-16">
         <AnimatePresence mode="wait">
-          {filteredProperties.length > 0 ? (
+          {isLoading ? (
+            <motion.div
+              key="loading"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="text-center py-24"
+            >
+              <Loader2 className="h-8 w-8 animate-spin mx-auto text-primary" />
+              <p className="text-foreground/60 mt-4">Loading properties...</p>
+            </motion.div>
+          ) : error ? (
+            <motion.div
+              key="error"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="text-center py-24"
+            >
+              <p className="font-display text-2xl text-red-500 mb-4">
+                Error loading properties
+              </p>
+              <p className="text-foreground/40">
+                Please try refreshing the page
+              </p>
+            </motion.div>
+          ) : filteredProperties.length > 0 ? (
             <motion.div
               key="grid"
               initial={{ opacity: 0 }}
@@ -205,6 +160,7 @@ const Properties = () => {
       <Footer />
     </div>
   );
+};
 };
 
 export default Properties;

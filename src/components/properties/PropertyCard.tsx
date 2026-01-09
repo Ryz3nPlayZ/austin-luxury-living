@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Property } from "@/types/property";
+import { Property, getPropertyImages } from "@/types/property";
 
 interface PropertyCardProps {
   property: Property;
@@ -16,6 +16,9 @@ const PropertyCard = ({ property, index, onClick }: PropertyCardProps) => {
     }).format(price);
   };
 
+  const images = getPropertyImages(property);
+  const imageUrl = images.length > 0 ? images[0] : "https://via.placeholder.com/400x300?text=No+Image";
+
   return (
     <motion.article
       initial={{ opacity: 0, y: 20 }}
@@ -25,17 +28,24 @@ const PropertyCard = ({ property, index, onClick }: PropertyCardProps) => {
       onClick={onClick}
     >
       {/* Image Container */}
-      <div className="relative aspect-[4/3] overflow-hidden mb-4">
+      <div className="relative aspect-[4/3] overflow-hidden mb-4 bg-foreground/5">
         <img
-          src={property.images[0]}
+          src={imageUrl}
           alt={property.address}
           className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
         />
         
         {/* Status Badge */}
-        {property.status && (
+        {property.status && property.status !== "Active" && (
           <span className="absolute top-4 left-4 bg-white/90 px-3 py-1.5 text-xs font-medium text-foreground uppercase tracking-wide">
             {property.status}
+          </span>
+        )}
+        
+        {/* Pocket Listing Badge */}
+        {property.is_pocket_listing && (
+          <span className="absolute top-4 right-4 bg-primary/90 px-3 py-1.5 text-xs font-medium text-white uppercase tracking-wide">
+            Pocket Listing
           </span>
         )}
       </div>
@@ -49,7 +59,7 @@ const PropertyCard = ({ property, index, onClick }: PropertyCardProps) => {
           {property.address}
         </p>
         <p className="text-sm text-foreground/40 mt-2">
-          {property.beds} Bed · {property.baths} Bath · {property.sqft.toLocaleString()} Sq Ft
+          {property.bedrooms} Bed · {property.bathrooms} Bath · {property.sqft?.toLocaleString()} Sq Ft
         </p>
       </div>
     </motion.article>

@@ -7,8 +7,10 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Property } from "@/types/property";
+import { Property, getPropertyImages } from "@/types/property";
 import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
+import { useSubmitLead } from "@/hooks/useLeads";
+import { useToast } from "@/hooks/use-toast";
 
 interface QuickViewModalProps {
   property: Property | null;
@@ -17,6 +19,8 @@ interface QuickViewModalProps {
 
 const QuickViewModal = ({ property, onClose }: QuickViewModalProps) => {
   const [currentImage, setCurrentImage] = useState(0);
+  const submitLead = useSubmitLead();
+  const { toast } = useToast();
 
   if (!property) return null;
 
@@ -28,12 +32,37 @@ const QuickViewModal = ({ property, onClose }: QuickViewModalProps) => {
     }).format(price);
   };
 
+  const images = getPropertyImages(property);
+  const displayImages = images.length > 0 ? images : ["https://via.placeholder.com/800x500?text=No+Image"];
+
   const nextImage = () => {
-    setCurrentImage((prev) => (prev + 1) % property.images.length);
+    setCurrentImage((prev) => (prev + 1) % displayImages.length);
   };
 
   const prevImage = () => {
-    setCurrentImage((prev) => (prev - 1 + property.images.length) % property.images.length);
+    setCurrentImage((prev) => (prev - 1 + displayImages.length) % displayImages.length);
+  };
+
+  const handleRequestShowing = async () => {
+    try {
+      await submitLead.mutateAsync({
+        name: "Inquiry from Property View",
+        email: "noreply@austinestates.com",
+        message: `Requesting private showing for ${property.title}`,
+        property_id: property.id,
+      });
+
+      toast({
+        title: "Request Sent",
+        description: "We'll contact you to schedule a private showing.",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to submit request. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   return (
@@ -48,7 +77,7 @@ const QuickViewModal = ({ property, onClose }: QuickViewModalProps) => {
           <AnimatePresence mode="wait">
             <motion.img
               key={currentImage}
-              src={property.images[currentImage]}
+              src={displayImages[currentImage]}
               alt={`${property.address} - Image ${currentImage + 1}`}
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -76,7 +105,7 @@ const QuickViewModal = ({ property, onClose }: QuickViewModalProps) => {
 
           {/* Image Counter */}
           <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-white/90 px-3 py-1 text-sm">
-            {currentImage + 1} / {property.images.length}
+            {currentImage + 1} / {displayImages.length}
           </div>
 
           {/* Close Button */}
@@ -100,20 +129,28 @@ const QuickViewModal = ({ property, onClose }: QuickViewModalProps) => {
                 {property.address}
               </p>
               <p className="text-foreground/70">
-                {property.beds} Bedrooms · {property.baths} Bathrooms · {property.sqft.toLocaleString()} Sq Ft
+                {property.bedrooms} Bedrooms · {property.bathrooms} Bathrooms · {property.sqft?.toLocaleString()} Sq Ft
               </p>
+              {property.description && (
+                <p className="text-foreground/60 mt-4 text-sm max-w-md">
+                  {property.description}
+                </p>
+              )}
             </div>
             
             <Button 
+              onClick={handleRequestShowing}
+              disabled={submitLead.isPending}
               className="border-2 border-foreground bg-transparent text-foreground hover:bg-foreground hover:text-background transition-colors px-8"
             >
-              Request Private Showing
+              {submitLead.isPending ? "Sending..." : "Request Showing"}
             </Button>
           </div>
         </div>
       </DialogContent>
     </Dialog>
   );
+};
 };
 
 export default QuickViewModal;

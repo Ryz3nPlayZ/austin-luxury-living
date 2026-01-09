@@ -1,10 +1,10 @@
-import { useState } from "react";
 import { motion } from "framer-motion";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
+import { useSubmitLead } from "@/hooks/useLeads";
 
 const contactSchema = z.object({
   name: z.string().trim().min(1, "Name is required").max(100, "Name must be less than 100 characters"),
@@ -16,8 +16,8 @@ const contactSchema = z.object({
 type ContactFormData = z.infer<typeof contactSchema>;
 
 const ContactForm = () => {
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
+  const submitLead = useSubmitLead();
 
   const {
     register,
@@ -29,18 +29,27 @@ const ContactForm = () => {
   });
 
   const onSubmit = async (data: ContactFormData) => {
-    setIsSubmitting(true);
-    
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    
-    toast({
-      title: "Message Sent",
-      description: "We'll be in touch within 24 hours.",
-    });
-    
-    reset();
-    setIsSubmitting(false);
+    try {
+      await submitLead.mutateAsync({
+        name: data.name,
+        email: data.email,
+        phone: data.phone || undefined,
+        message: data.message || undefined,
+      });
+
+      toast({
+        title: "Message Sent",
+        description: "We'll be in touch within 24 hours.",
+      });
+
+      reset();
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to send message. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   return (
@@ -119,10 +128,10 @@ const ContactForm = () => {
       {/* Submit Button */}
       <Button
         type="submit"
-        disabled={isSubmitting}
+        disabled={submitLead.isPending}
         className="border-2 border-foreground bg-transparent text-foreground hover:bg-foreground hover:text-background transition-all px-12 h-14 text-sm uppercase tracking-widest"
       >
-        {isSubmitting ? "Sending..." : "Send Message"}
+        {submitLead.isPending ? "Sending..." : "Send Message"}
       </Button>
     </motion.form>
   );
