@@ -151,6 +151,5 @@ const QuickViewModal = ({ property, onClose }: QuickViewModalProps) => {
     </Dialog>
   );
 };
-};
 
 export default QuickViewModal;
