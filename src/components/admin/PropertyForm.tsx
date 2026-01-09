@@ -19,27 +19,20 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Loader2, Upload, X } from "lucide-react";
-
-interface Property {
-  id: string;
-  title: string;
-  address: string;
-  price: number;
-  description: string | null;
-  sqft: number | null;
-  bedrooms: number | null;
-  bathrooms: number | null;
-  image_url: string | null;
-  status: string;
-  is_pocket_listing: boolean;
-}
+import { Loader2, X, Plus } from "lucide-react";
+import { PropertyWithImages } from "@/lib/services/propertyService";
 
 interface PropertyFormProps {
   open: boolean;
   onClose: () => void;
   onSuccess: () => void;
-  property: Property | null;
+  property: PropertyWithImages | null;
+}
+
+interface ImageUpload {
+  file: File;
+  preview: string;
+  isUploading: boolean;
 }
 
 export const PropertyForm = ({
@@ -49,7 +42,12 @@ export const PropertyForm = ({
   property,
 }: PropertyFormProps) => {
   const [isLoading, setIsLoading] = useState(false);
-  const [isUploading, setIsUploading] = useState(false);
+  const [images, setImages] = useState<ImageUpload[]>([]);
+  const [existingImages, setExistingImages] = useState<Array<{
+    id: string;
+    image_url: string;
+    display_order: number;
+  }>>([]);
   const [formData, setFormData] = useState({
     title: "",
     address: "",
@@ -58,7 +56,6 @@ export const PropertyForm = ({
     sqft: "",
     bedrooms: "",
     bathrooms: "",
-    image_url: "",
     status: "Active",
     is_pocket_listing: false,
   });
@@ -74,10 +71,10 @@ export const PropertyForm = ({
         sqft: property.sqft?.toString() || "",
         bedrooms: property.bedrooms?.toString() || "",
         bathrooms: property.bathrooms?.toString() || "",
-        image_url: property.image_url || "",
         status: property.status,
         is_pocket_listing: property.is_pocket_listing,
       });
+      setExistingImages(property.property_images || []);
     } else {
       setFormData({
         title: "",
@@ -87,134 +84,188 @@ export const PropertyForm = ({
         sqft: "",
         bedrooms: "",
         bathrooms: "",
-        image_url: "",
         status: "Active",
         is_pocket_listing: false,
       });
+      setExistingImages([]);
     }
+    setImages([]);
   }, [property, open]);
 
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    const validFiles = files.filter(file => file.type.startsWith("image/"));
 
-    if (!file.type.startsWith("image/")) {
+    if (validFiles.length !== files.length) {
       toast({
-        title: "Invalid file",
-        description: "Please upload an image file",
+        title: "Invalid files",
+        description: "Some files were skipped because they are not images",
         variant: "destructive",
       });
-      return;
     }
 
-    setIsUploading(true);
+    const newImages: ImageUpload[] = validFiles.map(file => ({
+      file,
+      preview: URL.createObjectURL(file),
+      isUploading: false,
+    }));
 
-    const fileExt = file.name.split(".").pop();
-    const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+    setImages(prev => [...prev, ...newImages]);
+  };
 
-    const { error: uploadError } = await supabase.storage
-      .from("property-images")
-      .upload(fileName, file);
-
-    if (uploadError) {
-      toast({
-        title: "Upload failed",
-        description: uploadError.message,
-        variant: "destructive",
-      });
-      setIsUploading(false);
-      return;
-    }
-
-    const { data } = supabase.storage
-      .from("property-images")
-      .getPublicUrl(fileName);
-
-    setFormData((prev) => ({ ...prev, image_url: data.publicUrl }));
-    setIsUploading(false);
-
-    toast({
-      title: "Image uploaded",
-      description: "Image uploaded successfully",
+  const removeNewImage = (index: number) => {
+    setImages(prev => {
+      const updated = [...prev];
+      URL.revokeObjectURL(updated[index].preview);
+      updated.splice(index, 1);
+      return updated;
     });
   };
 
-  const handleRemoveImage = () => {
-    setFormData((prev) => ({ ...prev, image_url: "" }));
+  const removeExistingImage = (imageId: string) => {
+    setExistingImages(prev => prev.filter(img => img.id !== imageId));
+  };
+
+  const uploadImages = async (): Promise<Array<{ image_url: string; display_order: number }>> => {
+    const uploadedImages: Array<{ image_url: string; display_order: number }> = [];
+
+    for (let i = 0; i < images.length; i++) {
+      const imageUpload = images[i];
+      setImages(prev => prev.map((img, idx) =>
+        idx === i ? { ...img, isUploading: true } : img
+      ));
+
+      const fileExt = imageUpload.file.name.split(".").pop();
+      const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from("property-images")
+        .upload(fileName, imageUpload.file);
+
+      if (uploadError) {
+        toast({
+          title: "Upload failed",
+          description: `Failed to upload ${imageUpload.file.name}: ${uploadError.message}`,
+          variant: "destructive",
+        });
+        continue;
+      }
+
+      const { data } = supabase.storage
+        .from("property-images")
+        .getPublicUrl(fileName);
+
+      uploadedImages.push({
+        image_url: data.publicUrl,
+        display_order: existingImages.length + uploadedImages.length,
+      });
+
+      setImages(prev => prev.map((img, idx) =>
+        idx === i ? { ...img, isUploading: false } : img
+      ));
+    }
+
+    return uploadedImages;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
-    const payload = {
-      title: formData.title,
-      address: formData.address,
-      price: parseFloat(formData.price),
-      description: formData.description || null,
-      sqft: formData.sqft ? parseInt(formData.sqft) : null,
-      bedrooms: formData.bedrooms ? parseInt(formData.bedrooms) : null,
-      bathrooms: formData.bathrooms ? parseInt(formData.bathrooms) : null,
-      image_url: formData.image_url || null,
-      status: formData.status,
-      is_pocket_listing: formData.is_pocket_listing,
-    };
+    try {
+      // Upload new images first
+      const uploadedImages = await uploadImages();
 
-    let error;
-    let propertyId = property?.id;
+      const payload = {
+        title: formData.title,
+        address: formData.address,
+        price: parseFloat(formData.price),
+        description: formData.description || null,
+        sqft: formData.sqft ? parseInt(formData.sqft) : null,
+        bedrooms: formData.bedrooms ? parseInt(formData.bedrooms) : null,
+        bathrooms: formData.bathrooms ? parseInt(formData.bathrooms) : null,
+        status: formData.status,
+        is_pocket_listing: formData.is_pocket_listing,
+      };
 
-    if (property) {
-      const result = await supabase
-        .from("properties")
-        .update(payload)
-        .eq("id", property.id);
-      error = result.error;
-    } else {
-      const result = await supabase.from("properties").insert(payload).select().single();
-      error = result.error;
-      if (result.data) {
-        propertyId = result.data.id;
+      let propertyId = property?.id;
+
+      if (property) {
+        // Update existing property
+        const { data, error } = await supabase
+          .from("properties")
+          .update(payload)
+          .eq("id", property.id)
+          .select()
+          .single();
+
+        if (error) throw error;
+        propertyId = data.id;
+      } else {
+        // Create new property
+        const { data, error } = await supabase
+          .from("properties")
+          .insert(payload)
+          .select()
+          .single();
+
+        if (error) throw error;
+        propertyId = data.id;
       }
-    }
 
-    if (error) {
+      if (!propertyId) throw new Error("Failed to get property ID");
+
+      // Handle existing images - remove deleted ones
+      if (property?.property_images) {
+        const currentImageIds = existingImages.map(img => img.id);
+        const originalImageIds = property.property_images.map(img => img.id);
+        const imagesToDelete = originalImageIds.filter(id => !currentImageIds.includes(id));
+
+        for (const imageId of imagesToDelete) {
+          await supabase.from("property_images").delete().eq("id", imageId);
+        }
+      }
+
+      // Add new images
+      for (const uploadedImage of uploadedImages) {
+        await supabase.from("property_images").insert({
+          property_id: propertyId,
+          image_url: uploadedImage.image_url,
+          display_order: uploadedImage.display_order,
+        });
+      }
+
+      toast({
+        title: "Success",
+        description: property
+          ? "Property updated successfully"
+          : "Property created successfully",
+      });
+      onSuccess();
+    } catch (error: any) {
       toast({
         title: "Error",
         description: error.message,
         variant: "destructive",
       });
+    } finally {
       setIsLoading(false);
-      return;
+      // Clean up object URLs
+      images.forEach(img => URL.revokeObjectURL(img.preview));
     }
-
-    // If we have an image URL and a property ID, also save to property_images table
-    if (formData.image_url && propertyId) {
-      // Check if image already exists for this property
-      const { data: existingImages } = await supabase
-        .from("property_images")
-        .select("id")
-        .eq("property_id", propertyId)
-        .eq("image_url", formData.image_url);
-
-      // Only insert if image doesn't exist
-      if (!existingImages || existingImages.length === 0) {
-        await supabase.from("property_images").insert({
-          property_id: propertyId,
-          image_url: formData.image_url,
-          display_order: 0,
-        });
-      }
-    }
-
-    toast({
-      title: "Success",
-      description: property
-        ? "Property updated successfully"
-        : "Property created successfully",
-    });
-    onSuccess();
-    setIsLoading(false);
   };
+
+  const allImages = [
+    ...existingImages.map(img => ({ type: 'existing' as const, ...img })),
+    ...images.map((img, idx) => ({ type: 'new' as const, index: idx, ...img }))
+  ].sort((a, b) => {
+    if (a.type === 'existing' && b.type === 'existing') {
+      return a.display_order - b.display_order;
+    }
+    if (a.type === 'existing') return -1;
+    if (b.type === 'existing') return 1;
+    return 0;
+  });
 
   return (
     <Sheet open={open} onOpenChange={onClose}>
@@ -226,47 +277,48 @@ export const PropertyForm = ({
         </SheetHeader>
 
         <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Image Upload */}
+          {/* Images Upload */}
           <div className="space-y-2">
-            <Label>Property Image</Label>
-            {formData.image_url ? (
-              <div className="relative">
-                <img
-                  src={formData.image_url}
-                  alt="Property"
-                  className="w-full h-48 object-cover rounded-lg"
-                />
-                <Button
-                  type="button"
-                  variant="destructive"
-                  size="icon"
-                  className="absolute top-2 right-2"
-                  onClick={handleRemoveImage}
-                >
-                  <X className="h-4 w-4" />
-                </Button>
-              </div>
-            ) : (
-              <label className="flex flex-col items-center justify-center w-full h-48 border-2 border-dashed border-border rounded-lg cursor-pointer hover:border-primary transition-colors">
-                {isUploading ? (
-                  <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-                ) : (
-                  <>
-                    <Upload className="h-8 w-8 text-muted-foreground mb-2" />
-                    <span className="text-sm text-muted-foreground">
-                      Click to upload image
-                    </span>
-                  </>
-                )}
+            <Label>Property Images</Label>
+            <div className="grid grid-cols-2 gap-4">
+              {allImages.map((image, idx) => (
+                <div key={idx} className="relative group">
+                  <img
+                    src={image.type === 'existing' ? image.image_url : image.preview}
+                    alt={`Property ${idx + 1}`}
+                    className="w-full aspect-square object-cover rounded-lg border"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => image.type === 'existing'
+                      ? removeExistingImage(image.id)
+                      : removeNewImage(image.index)
+                    }
+                    className="absolute top-2 right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                  {image.type === 'new' && image.isUploading && (
+                    <div className="absolute inset-0 bg-black/50 flex items-center justify-center rounded-lg">
+                      <Loader2 className="w-6 h-6 text-white animate-spin" />
+                    </div>
+                  )}
+                </div>
+              ))}
+
+              {/* Upload Button */}
+              <label className="aspect-square border-2 border-dashed border-border rounded-lg cursor-pointer hover:border-primary transition-colors flex flex-col items-center justify-center">
+                <Plus className="w-8 h-8 text-muted-foreground mb-2" />
+                <span className="text-sm text-muted-foreground text-center">Add Image</span>
                 <input
                   type="file"
                   accept="image/*"
+                  multiple
                   className="hidden"
-                  onChange={handleImageUpload}
-                  disabled={isUploading}
+                  onChange={handleImageSelect}
                 />
               </label>
-            )}
+            </div>
           </div>
 
           {/* Title */}

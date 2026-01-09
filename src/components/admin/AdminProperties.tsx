@@ -23,27 +23,13 @@ import {
 } from "@/components/ui/alert-dialog";
 import { PropertyForm } from "./PropertyForm";
 import { Badge } from "@/components/ui/badge";
-
-interface Property {
-  id: string;
-  title: string;
-  address: string;
-  price: number;
-  description: string | null;
-  sqft: number | null;
-  bedrooms: number | null;
-  bathrooms: number | null;
-  image_url: string | null;
-  status: string;
-  is_pocket_listing: boolean;
-  created_at: string;
-}
+import { PropertyWithImages } from "@/lib/services/propertyService";
 
 export const AdminProperties = () => {
-  const [properties, setProperties] = useState<Property[]>([]);
+  const [properties, setProperties] = useState<PropertyWithImages[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isFormOpen, setIsFormOpen] = useState(false);
-  const [editingProperty, setEditingProperty] = useState<Property | null>(null);
+  const [editingProperty, setEditingProperty] = useState<PropertyWithImages | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const { toast } = useToast();
@@ -52,7 +38,14 @@ export const AdminProperties = () => {
     setIsLoading(true);
     const { data, error } = await supabase
       .from("properties")
-      .select("*")
+      .select(`
+        *,
+        property_images (
+          id,
+          image_url,
+          display_order
+        )
+      `)
       .order("created_at", { ascending: false });
 
     if (error) {
@@ -62,7 +55,7 @@ export const AdminProperties = () => {
         variant: "destructive",
       });
     } else {
-      setProperties(data || []);
+      setProperties(data as PropertyWithImages[] || []);
     }
     setIsLoading(false);
   };
@@ -97,7 +90,7 @@ export const AdminProperties = () => {
     setDeleteId(null);
   };
 
-  const handleEdit = (property: Property) => {
+  const handleEdit = (property: PropertyWithImages) => {
     setEditingProperty(property);
     setIsFormOpen(true);
   };
@@ -179,9 +172,9 @@ export const AdminProperties = () => {
               {properties.map((property) => (
                 <TableRow key={property.id}>
                   <TableCell>
-                    {property.image_url ? (
+                    {property.property_images && property.property_images.length > 0 ? (
                       <img
-                        src={property.image_url}
+                        src={property.property_images[0].image_url}
                         alt={property.title}
                         className="w-12 h-12 object-cover rounded"
                       />
@@ -269,5 +262,3 @@ export const AdminProperties = () => {
     </div>
   );
 };
-
-
