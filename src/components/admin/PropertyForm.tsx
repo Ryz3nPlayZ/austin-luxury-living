@@ -161,6 +161,7 @@ export const PropertyForm = ({
     };
 
     let error;
+    let propertyId = property?.id;
 
     if (property) {
       const result = await supabase
@@ -169,8 +170,11 @@ export const PropertyForm = ({
         .eq("id", property.id);
       error = result.error;
     } else {
-      const result = await supabase.from("properties").insert(payload);
+      const result = await supabase.from("properties").insert(payload).select().single();
       error = result.error;
+      if (result.data) {
+        propertyId = result.data.id;
+      }
     }
 
     if (error) {
@@ -179,16 +183,36 @@ export const PropertyForm = ({
         description: error.message,
         variant: "destructive",
       });
-    } else {
-      toast({
-        title: "Success",
-        description: property
-          ? "Property updated successfully"
-          : "Property created successfully",
-      });
-      onSuccess();
+      setIsLoading(false);
+      return;
     }
 
+    // If we have an image URL and a property ID, also save to property_images table
+    if (formData.image_url && propertyId) {
+      // Check if image already exists for this property
+      const { data: existingImages } = await supabase
+        .from("property_images")
+        .select("id")
+        .eq("property_id", propertyId)
+        .eq("image_url", formData.image_url);
+
+      // Only insert if image doesn't exist
+      if (!existingImages || existingImages.length === 0) {
+        await supabase.from("property_images").insert({
+          property_id: propertyId,
+          image_url: formData.image_url,
+          display_order: 0,
+        });
+      }
+    }
+
+    toast({
+      title: "Success",
+      description: property
+        ? "Property updated successfully"
+        : "Property created successfully",
+    });
+    onSuccess();
     setIsLoading(false);
   };
 
