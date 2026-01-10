@@ -151,12 +151,15 @@ export const PropertyForm = ({
         continue;
       }
 
-      const { data } = supabase.storage
+      // Get the public URL for the uploaded file
+      const { data: urlData } = supabase.storage
         .from("property-images")
         .getPublicUrl(fileName);
 
+      console.log("Uploaded image URL:", urlData.publicUrl); // Debug log
+
       uploadedImages.push({
-        image_url: data.publicUrl,
+        image_url: urlData.publicUrl,
         display_order: existingImages.length + uploadedImages.length,
       });
 
