@@ -90,7 +90,8 @@ export const AdminAnalytics = () => {
 
       allLeads?.forEach((lead) => {
         const message = lead.message?.toLowerCase() || "";
-        if (message.includes("valuation") || message.includes("home value")) {
+        const name = lead.name?.toLowerCase() || "";
+        if (name.includes("valuation") || message.includes("valuation") || message.includes("home value")) {
           valuationCount++;
         } else if (lead.property_id) {
           propertyShowingCount++;

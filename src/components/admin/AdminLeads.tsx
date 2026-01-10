@@ -170,6 +170,10 @@ export const AdminLeads = () => {
                     <Badge variant="secondary" className="text-xs">
                       {lead.properties.title}
                     </Badge>
+                  ) : lead.name === "Home Valuation Request" ? (
+                    <Badge variant="outline" className="text-xs border-primary text-primary">
+                      Valuation Request
+                    </Badge>
                   ) : (
                     <span className="text-sm text-muted-foreground">General Inquiry</span>
                   )}
