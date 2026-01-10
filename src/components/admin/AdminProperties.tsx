@@ -1,8 +1,16 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
-import { Plus, Pencil, Trash2, Loader2, Building2 } from "lucide-react";
+import { Plus, Pencil, Trash2, Loader2, Building2, Search } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Table,
   TableBody,
@@ -32,6 +40,9 @@ export const AdminProperties = () => {
   const [editingProperty, setEditingProperty] = useState<PropertyWithImages | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [pocketFilter, setPocketFilter] = useState<string>("all");
   const { toast } = useToast();
 
   const fetchProperties = async () => {
@@ -63,6 +74,25 @@ export const AdminProperties = () => {
   useEffect(() => {
     fetchProperties();
   }, []);
+
+  const filteredProperties = useMemo(() => {
+    return properties.filter((property) => {
+      const matchesSearch =
+        searchTerm === "" ||
+        property.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        property.address.toLowerCase().includes(searchTerm.toLowerCase());
+      
+      const matchesStatus =
+        statusFilter === "all" || property.status === statusFilter;
+      
+      const matchesPocket =
+        pocketFilter === "all" ||
+        (pocketFilter === "pocket" && property.is_pocket_listing) ||
+        (pocketFilter === "public" && !property.is_pocket_listing);
+
+      return matchesSearch && matchesStatus && matchesPocket;
+    });
+  }, [properties, searchTerm, statusFilter, pocketFilter]);
 
   const handleDelete = async () => {
     if (!deleteId) return;
@@ -138,12 +168,45 @@ export const AdminProperties = () => {
     <div>
       <div className="flex justify-between items-center mb-6">
         <p className="text-muted-foreground">
-          {properties.length} {properties.length === 1 ? "property" : "properties"}
+          {filteredProperties.length} of {properties.length} {properties.length === 1 ? "property" : "properties"}
         </p>
         <Button onClick={() => setIsFormOpen(true)} className="btn-primary">
           <Plus className="h-4 w-4 mr-2" />
           New Property
         </Button>
+      </div>
+
+      <div className="flex flex-col sm:flex-row gap-3 mb-6">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Search by title or address..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-9"
+          />
+        </div>
+        <Select value={statusFilter} onValueChange={setStatusFilter}>
+          <SelectTrigger className="w-full sm:w-[180px]">
+            <SelectValue placeholder="Status" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Status</SelectItem>
+            <SelectItem value="Active">Active</SelectItem>
+            <SelectItem value="Pending">Pending</SelectItem>
+            <SelectItem value="Sold">Sold</SelectItem>
+          </SelectContent>
+        </Select>
+        <Select value={pocketFilter} onValueChange={setPocketFilter}>
+          <SelectTrigger className="w-full sm:w-[180px]">
+            <SelectValue placeholder="Listing Type" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Types</SelectItem>
+            <SelectItem value="pocket">Pocket Listings</SelectItem>
+            <SelectItem value="public">Public Listings</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
 
       {properties.length === 0 ? (
@@ -153,6 +216,13 @@ export const AdminProperties = () => {
           <Button onClick={() => setIsFormOpen(true)} variant="outline">
             Add your first property
           </Button>
+        </div>
+      ) : filteredProperties.length === 0 ? (
+        <div className="text-center py-12 border border-dashed border-border rounded-lg">
+          <p className="text-muted-foreground">No properties match your filters</p>
+          <p className="text-sm text-muted-foreground mt-2">
+            Try adjusting your search or filters
+          </p>
         </div>
       ) : (
         <div className="border border-border rounded-lg overflow-hidden">
@@ -169,7 +239,7 @@ export const AdminProperties = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {properties.map((property) => (
+              {filteredProperties.map((property) => (
                 <TableRow key={property.id}>
                   <TableCell>
                     {property.property_images && property.property_images.length > 0 ? (

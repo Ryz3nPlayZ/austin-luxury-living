@@ -2,14 +2,15 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { User, Session } from "@supabase/supabase-js";
-import { Building2, Users, Settings, LogOut, Menu } from "lucide-react";
+import { Building2, Users, Settings, LogOut, Menu, BarChart3 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { AdminProperties } from "@/components/admin/AdminProperties";
 import { AdminLeads } from "@/components/admin/AdminLeads";
 import { AdminSettings } from "@/components/admin/AdminSettings";
+import { AdminAnalytics } from "@/components/admin/AdminAnalytics";
 
-type TabType = "properties" | "leads" | "settings";
+type TabType = "properties" | "leads" | "analytics" | "settings";
 
 const Admin = () => {
   const [user, setUser] = useState<User | null>(null);
@@ -63,6 +64,7 @@ const Admin = () => {
   const tabs = [
     { id: "properties" as TabType, label: "Properties", icon: Building2 },
     { id: "leads" as TabType, label: "Leads", icon: Users },
+    { id: "analytics" as TabType, label: "Analytics", icon: BarChart3 },
     { id: "settings" as TabType, label: "Settings", icon: Settings },
   ];
 
@@ -147,6 +149,7 @@ const Admin = () => {
           </header>
 
           {activeTab === "properties" && <AdminProperties />}
+          {activeTab === "analytics" && <AdminAnalytics />}
           {activeTab === "leads" && <AdminLeads />}
           {activeTab === "settings" && <AdminSettings user={user} />}
         </div>

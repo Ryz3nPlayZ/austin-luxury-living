@@ -1,6 +1,7 @@
 import { motion } from "framer-motion";
 import heroImage from "@/assets/hero-home.jpg";
 import { Button } from "@/components/ui/button";
+import { Link } from "react-router-dom";
 
 const HeroSection = () => {
   return (
@@ -43,11 +44,11 @@ const HeroSection = () => {
             transition={{ duration: 0.8, delay: 0.6 }}
             className="flex flex-col sm:flex-row gap-4"
           >
-            <Button variant="hero" size="lg">
-              Get Home Valuation
+            <Button variant="hero" size="lg" asChild>
+              <a href="#valuation">Get Home Valuation</a>
             </Button>
-            <Button variant="heroOutline" size="lg">
-              Search Off-Market Homes
+            <Button variant="heroOutline" size="lg" asChild>
+              <Link to="/properties">Search Off-Market Homes</Link>
             </Button>
           </motion.div>
         </div>
