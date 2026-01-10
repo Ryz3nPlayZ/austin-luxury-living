@@ -1,73 +1,108 @@
-# Welcome to your Lovable project
+# Austin Luxury Living
 
-## Project info
+A full-stack luxury real estate platform for Austin, Texas, featuring property listings, lead management, and an admin CRM.
 
-**URL**: https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID
+## 🏡 About
 
-## How can I edit this code?
+Austin Luxury Living is a modern real estate website built for showcasing luxury properties in Austin's premier neighborhoods including Westlake, Barton Creek, and beyond. The platform features a public-facing property showcase and a comprehensive admin panel for managing listings and leads.
 
-There are several ways of editing your application.
+## 🚀 Tech Stack
 
-**Use Lovable**
+- **Frontend**: React 18 + TypeScript + Vite
+- **UI Components**: Shadcn/ui + Radix UI + Tailwind CSS
+- **Backend**: Supabase (PostgreSQL + Auth + Storage)
+- **State Management**: TanStack React Query v5
+- **Forms**: React Hook Form + Zod validation
+- **Animations**: Framer Motion
+- **Routing**: React Router
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and start prompting.
+## 📋 Features
 
-Changes made via Lovable will be committed automatically to this repo.
+### Public Features
+- Property listings with search and filters
+- Property detail quick view modals
+- Contact forms for inquiries and showing requests
+- Home valuation request form
+- Responsive design for all devices
 
-**Use your preferred IDE**
+### Admin Panel
+- **Properties Management**: Add, edit, delete listings with image uploads
+- **CRM Leads Table**: View and manage all inquiries
+- **Analytics Dashboard**: Track leads by source, property views, and metrics
+- **Search & Filters**: Find properties and leads quickly
+- **Authentication**: Secure admin access via Supabase Auth
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+## 🛠️ Getting Started
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+### Prerequisites
 
-Follow these steps:
+- Node.js 18+ and npm/bun installed
+- Supabase account and project
+
+### Installation
 
 ```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+# Clone the repository
+git clone https://github.com/Ryz3nPlayZ/austin-luxury-living.git
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+# Navigate to project directory
+cd austin-luxury-living
 
-# Step 3: Install the necessary dependencies.
-npm i
+# Install dependencies
+npm install
+# or
+bun install
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
+# Start development server
 npm run dev
+# or
+bun dev
 ```
 
-**Edit a file directly in GitHub**
+### Environment Setup
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+Create a `.env` file in the root directory:
 
-**Use GitHub Codespaces**
+```env
+VITE_SUPABASE_URL=your_supabase_project_url
+VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
+```
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+### Database Setup
 
-## What technologies are used for this project?
+1. Run migrations in your Supabase project:
+   - Navigate to SQL Editor in Supabase Dashboard
+   - Execute migration files from `supabase/migrations/` in order
 
-This project is built with:
+2. Set up Storage:
+   - Create a `property-images` bucket
+   - Set it to public
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+## 📦 Project Structure
 
-## How can I deploy this project?
+```
+src/
+├── components/       # React components
+│   ├── admin/       # Admin panel components
+│   ├── properties/  # Property-related components
+│   ├── ui/          # Shadcn UI components
+│   └── ...
+├── hooks/           # Custom React hooks
+├── lib/
+│   └── services/    # API service layer
+├── pages/           # Route pages
+├── types/           # TypeScript types
+└── integrations/    # Third-party integrations
+    └── supabase/
+```
 
-Simply open [Lovable](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and click on Share -> Publish.
+## 🚢 Deployment
 
-## Can I connect a custom domain to my Lovable project?
+This project can be deployed to:
+- **Vercel** (recommended): `vercel deploy`
+- **Netlify**: Connect your GitHub repo
+- **Any static host**: `npm run build` and serve the `dist/` folder
 
-Yes, you can!
+## 📄 License
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+MIT License - feel free to use this project as a template for your own real estate websites.
