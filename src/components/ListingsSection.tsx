@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { useProperties } from "@/hooks/useProperties";
 import { getPropertyImages } from "@/types/property";
 import { Link } from "react-router-dom";
+import { useState } from "react";
 
 const ListingsSection = () => {
   const { data: properties = [], isLoading } = useProperties();
@@ -62,6 +63,8 @@ const ListingsSection = () => {
                       <img
                         src={imageUrl}
                         alt={property.address}
+                        loading="lazy"
+                        decoding="async"
                         className={`h-full w-full object-cover transition-transform duration-500 group-hover:scale-105 ${
                           isPocket ? "blur-sm" : ""
                         }`}
