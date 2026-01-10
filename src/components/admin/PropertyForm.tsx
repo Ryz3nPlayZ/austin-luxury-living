@@ -136,7 +136,8 @@ export const PropertyForm = ({
       ));
 
       const fileExt = imageUpload.file.name.split(".").pop();
-      const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+      const randomStr = Math.random().toString(36).substring(2, 10); // Generate 8 char string without leading '0.'
+      const fileName = `${Date.now()}-${randomStr}.${fileExt}`;
 
       const { error: uploadError } = await supabase.storage
         .from("property-images")
