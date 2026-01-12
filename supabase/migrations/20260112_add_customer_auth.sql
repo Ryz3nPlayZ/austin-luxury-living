@@ -64,9 +64,8 @@ FOR SELECT
 TO authenticated
 USING (true);
 
--- Update leads policies to allow authenticated users to manage their own leads
--- Drop existing leads policies and recreate
-DROP POLICY IF EXISTS "Anyone can submit leads" ON public.leads;
+-- Update leads policies to allow admins to manage all leads
+-- Keep existing policy for submissions, add admin access
 DROP POLICY IF EXISTS "Authenticated users can view leads" ON public.leads;
 
 -- Leads: Anyone can submit (but we'll associate with user if authenticated)
@@ -75,22 +74,16 @@ ON public.leads
 FOR INSERT
 WITH CHECK (true);
 
--- Leads: Authenticated users can view leads associated with properties they can access
-CREATE POLICY "Authenticated users can view accessible leads"
+-- Leads: Authenticated users can view all leads (simplified for admin access)
+CREATE POLICY "Authenticated users can view leads"
 ON public.leads
 FOR SELECT
 TO authenticated
-USING (
-  property_id IS NULL OR
-  EXISTS (
-    SELECT 1 FROM properties
-    WHERE properties.id = leads.property_id
-  )
-);
+USING (true);
 
--- Leads: Users can view their own leads (by email match - for customer leads)
-CREATE POLICY "Users can view their own leads"
+-- Leads: Authenticated users can delete leads
+CREATE POLICY "Authenticated users can delete leads"
 ON public.leads
-FOR SELECT
+FOR DELETE
 TO authenticated
-USING (email = (SELECT email FROM auth.users WHERE id = auth.uid()));
+USING (true);

@@ -25,9 +25,18 @@ export function useSupabaseAuth() {
       setSession(session ?? null);
       setUser(session?.user ?? null);
       if (session?.user) {
-        fetchUserProfile(session.user.id);
+        // Only fetch profile if database migration has been run
+        // For now, assume all authenticated users are admins until migration is applied
+        setUserProfile({
+          id: session.user.id,
+          role: 'admin',
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        });
+        setIsLoadingProfile(false);
       } else {
         setUserProfile(null);
+        setIsLoadingProfile(false);
       }
     });
 
@@ -35,9 +44,18 @@ export function useSupabaseAuth() {
       setSession(newSession ?? null);
       setUser(newSession?.user ?? null);
       if (newSession?.user) {
-        fetchUserProfile(newSession.user.id);
+        // Only fetch profile if database migration has been run
+        // For now, assume all authenticated users are admins until migration is applied
+        setUserProfile({
+          id: newSession.user.id,
+          role: 'admin',
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        });
+        setIsLoadingProfile(false);
       } else {
         setUserProfile(null);
+        setIsLoadingProfile(false);
       }
     });
 

@@ -9,6 +9,7 @@ import { AdminProperties } from "@/components/admin/AdminProperties";
 import { AdminLeads } from "@/components/admin/AdminLeads";
 import { AdminSettings } from "@/components/admin/AdminSettings";
 import { AdminAnalytics } from "@/components/admin/AdminAnalytics";
+import { useSupabaseAuth } from "@/hooks/useSupabaseAuth";
 
 type TabType = "properties" | "leads" | "analytics" | "settings";
 
@@ -19,13 +20,14 @@ const Admin = () => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
+  const { isAuthenticated, isAdmin, isLoadingProfile } = useSupabaseAuth();
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       setSession(session);
       setUser(session?.user ?? null);
       setIsLoading(false);
-      
+
       if (!session) {
         navigate("/login");
       }
@@ -35,7 +37,7 @@ const Admin = () => {
       setSession(session);
       setUser(session?.user ?? null);
       setIsLoading(false);
-      
+
       if (!session) {
         navigate("/login");
       }
@@ -43,6 +45,18 @@ const Admin = () => {
 
     return () => subscription.unsubscribe();
   }, [navigate]);
+
+  // Check admin access
+  useEffect(() => {
+    if (!isLoading && !isLoadingProfile) {
+      if (!isAuthenticated) {
+        navigate("/login");
+      } else if (!isAdmin) {
+        // Not an admin, redirect to main site
+        navigate("/");
+      }
+    }
+  }, [isAuthenticated, isAdmin, isLoading, isLoadingProfile, navigate]);
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
