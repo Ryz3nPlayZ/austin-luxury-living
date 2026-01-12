@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { fetchAllLeads } from "@/lib/services/leadService";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, Mail, Phone, Calendar, MessageSquare, Trash2, Eye, EyeOff } from "lucide-react";
 import { format } from "date-fns";
@@ -49,39 +50,32 @@ export const AdminLeads = () => {
   const fetchLeads = async () => {
     setIsLoading(true);
 
-    // First try with the join (for better data)
-    const { data: joinedData, error: joinError } = await supabase
-      .from("leads")
-      .select(`
-        *,
-        properties (
-          title,
-          address
-        )
-      `)
-      .order("created_at", { ascending: false });
+    try {
+      // Try using the service layer first (should handle RLS properly)
+      const serviceLeads = await fetchAllLeads();
+      setLeads(serviceLeads);
+    } catch (serviceError) {
+      console.warn("Service layer failed, trying direct query:", serviceError);
 
-    if (!joinError && joinedData) {
-      setLeads(joinedData);
-    } else {
-      // Fallback: fetch leads without properties join
-      console.warn("Failed to fetch leads with properties join, trying without join:", joinError);
-      const { data: simpleData, error: simpleError } = await supabase
+      // Fallback: Direct query with simplified select
+      const { data, error } = await supabase
         .from("leads")
-        .select("*")
+        .select("id, name, email, phone, message, property_id, created_at")
         .order("created_at", { ascending: false });
 
-      if (simpleError) {
+      if (error) {
         toast({
           title: "Error",
           description: "Failed to load leads",
           variant: "destructive",
         });
-        console.error("Failed to fetch leads:", simpleError);
+        console.error("Direct query failed:", error);
+        setLeads([]);
       } else {
-        setLeads(simpleData || []);
+        setLeads(data || []);
       }
     }
+
     setIsLoading(false);
   };
 
