@@ -48,32 +48,15 @@ export function useSupabaseAuth() {
   }, []);
 
   const fetchUserProfile = async (userId: string) => {
-    setIsLoadingProfile(true);
-    try {
-      const { data, error } = await supabase
-        .from('user_profiles')
-        .select('*')
-        .eq('id', userId)
-        .single();
-
-      if (error) {
-        console.error('Error fetching user profile:', error);
-        // For backward compatibility, assume admin if profile doesn't exist
-        setUserProfile({
-          id: userId,
-          role: 'admin',
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        });
-      } else {
-        setUserProfile(data);
-      }
-    } catch (error) {
-      console.error('Error in fetchUserProfile:', error);
-      setUserProfile(null);
-    } finally {
-      setIsLoadingProfile(false);
-    }
+    // Skip profile fetching until database is properly set up
+    // This prevents app crashes when the user_profiles table doesn't exist yet
+    setIsLoadingProfile(false);
+    setUserProfile({
+      id: userId,
+      role: 'admin', // Default to admin for backward compatibility
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    });
   };
 
   const signInWithOtp = (email: string) => supabase.auth.signInWithOtp({ email });
