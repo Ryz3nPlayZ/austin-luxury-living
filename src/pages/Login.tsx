@@ -64,7 +64,8 @@ const Login = () => {
 
     try {
       if (isSignUp) {
-        const redirectUrl = `${window.location.origin}/admin`;
+        // For new signups, redirect to the main site (not admin)
+        const redirectUrl = `${window.location.origin}/`;
         const { error } = await supabase.auth.signUp({
           email,
           password,
