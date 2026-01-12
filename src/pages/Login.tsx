@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
+import { useSupabaseAuth } from "@/hooks/useSupabaseAuth";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
 import { z } from "zod";
 
@@ -22,22 +23,19 @@ const Login = () => {
   const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { isAuthenticated, isAdmin, isLoadingProfile } = useSupabaseAuth();
 
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (session) {
+    // Redirect authenticated users based on their role
+    if (isAuthenticated && !isLoadingProfile) {
+      if (isAdmin) {
         navigate("/admin");
+      } else {
+        // Customers stay on the main site
+        navigate("/");
       }
-    });
-
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) {
-        navigate("/admin");
-      }
-    });
-
-    return () => subscription.unsubscribe();
-  }, [navigate]);
+    }
+  }, [isAuthenticated, isAdmin, isLoadingProfile, navigate]);
 
   const validateForm = () => {
     try {
@@ -129,8 +127,8 @@ const Login = () => {
           </h1>
           <p className="text-muted-foreground">
             {isSignUp
-              ? "Sign up to access the admin dashboard"
-              : "Sign in to access the admin dashboard"}
+              ? "Create an account to access exclusive listings"
+              : "Sign in to access exclusive listings"}
           </p>
         </div>
 

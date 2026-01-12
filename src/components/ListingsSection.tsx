@@ -2,13 +2,14 @@ import { motion } from "framer-motion";
 import { Lock, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useProperties } from "@/hooks/useProperties";
-import { getPropertyImages } from "@/types/property";
+import { useSupabaseAuth } from "@/hooks/useSupabaseAuth";
 import { Link } from "react-router-dom";
 import { useState } from "react";
 
 const ListingsSection = () => {
   const { data: properties = [], isLoading } = useProperties();
-  
+  const { isAuthenticated } = useSupabaseAuth();
+
   // Get first 3 properties for featured section
   const featuredProperties = properties.slice(0, 3);
 
@@ -18,6 +19,15 @@ const ListingsSection = () => {
       currency: "USD",
       maximumFractionDigits: 0,
     }).format(price);
+  };
+
+  const getPropertyImages = (property: any): string[] => {
+    if (!property.property_images || property.property_images.length === 0) {
+      return [];
+    }
+    return property.property_images
+      .sort((a: any, b: any) => a.display_order - b.display_order)
+      .map((img: any) => img.image_url);
   };
 
   return (
@@ -70,14 +80,14 @@ const ListingsSection = () => {
                         }`}
                       />
                       
-                      {isPocket && (
+                      {isPocket && !isAuthenticated && (
                         <div className="absolute inset-0 bg-foreground/60 flex flex-col items-center justify-center gap-4">
                           <Lock className="w-8 h-8 text-primary-foreground" />
                           <span className="text-primary-foreground text-sm uppercase tracking-widest font-medium">
-                            Pocket Listing
+                            Exclusive Listing
                           </span>
                           <Button variant="hero" size="sm" asChild>
-                            <Link to="/contact">Unlock Details</Link>
+                            <Link to="/login">Sign In to View</Link>
                           </Button>
                         </div>
                       )}

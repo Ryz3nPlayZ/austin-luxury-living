@@ -8,11 +8,12 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Property, getPropertyImages } from "@/types/property";
+import type { PropertyWithImages } from "@/lib/services/propertyService";
 import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 import { RequestShowingModal } from "./RequestShowingModal";
 
 interface QuickViewModalProps {
-  property: Property | null;
+  property: PropertyWithImages | null;
   onClose: () => void;
 }
 
@@ -30,8 +31,11 @@ const QuickViewModal = ({ property, onClose }: QuickViewModalProps) => {
     }).format(price);
   };
 
-  const images = getPropertyImages(property);
-  const displayImages = images.length > 0 ? images : ["https://via.placeholder.com/800x500?text=No+Image"];
+  const images = property.property_images || [];
+  const sortedImages = images
+    .sort((a: any, b: any) => a.display_order - b.display_order)
+    .map((img: any) => img.image_url);
+  const displayImages = sortedImages.length > 0 ? sortedImages : ["https://via.placeholder.com/800x500?text=No+Image"];
 
   const nextImage = () => {
     setCurrentImage((prev) => (prev + 1) % displayImages.length);

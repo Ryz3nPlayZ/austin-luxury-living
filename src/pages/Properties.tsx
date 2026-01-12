@@ -6,24 +6,21 @@ import PropertyCard from "@/components/properties/PropertyCard";
 import FilterBar from "@/components/properties/FilterBar";
 import QuickViewModal from "@/components/properties/QuickViewModal";
 import { Property } from "@/types/property";
+import type { PropertyWithImages } from "@/lib/services/propertyService";
 import { useProperties } from "@/hooks/useProperties";
+import { useSupabaseAuth } from "@/hooks/useSupabaseAuth";
 import { Loader2 } from "lucide-react";
 
 const Properties = () => {
-  const [showPocket, setShowPocket] = useState(false);
-  const [pocketUnlocked, setPocketUnlocked] = useState(false);
   const [priceFilter, setPriceFilter] = useState<string>("all");
   const [neighborhoodFilter, setNeighborhoodFilter] = useState<string>("all");
   const [bedsFilter, setBedsFilter] = useState<string>("all");
-  const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
+  const [selectedProperty, setSelectedProperty] = useState<PropertyWithImages | null>(null);
 
   const { data: properties = [], isLoading, error } = useProperties();
+  const { isAuthenticated } = useSupabaseAuth();
 
   const filteredProperties = properties.filter((property) => {
-    // Pocket filter
-    if (showPocket && !property.is_pocket_listing) return false;
-    if (!showPocket && property.is_pocket_listing) return false;
-
     // Price filter
     if (priceFilter !== "all") {
       const [min, max] = priceFilter.split("-").map(Number);
@@ -45,11 +42,10 @@ const Properties = () => {
     return true;
   });
 
+  // Simplified pocket toggle handler (no longer needed since auth controls access)
   const handlePocketToggle = (enabled: boolean) => {
-    if (enabled && !pocketUnlocked) {
-      setPocketUnlocked(true);
-    }
-    setShowPocket(enabled);
+    // Pocket listings are now controlled by authentication status
+    // This handler is kept for FilterBar compatibility but does nothing
   };
 
   return (
@@ -76,7 +72,7 @@ const Properties = () => {
 
       {/* Filter Bar */}
       <FilterBar
-        showPocket={showPocket}
+        showPocket={false} // Pocket listings are now always shown if user is authenticated
         onPocketToggle={handlePocketToggle}
         priceFilter={priceFilter}
         onPriceChange={setPriceFilter}

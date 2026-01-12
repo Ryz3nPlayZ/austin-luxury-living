@@ -1,8 +1,9 @@
 import { motion } from "framer-motion";
 import { Property, getPropertyImages } from "@/types/property";
+import type { PropertyWithImages } from "@/lib/services/propertyService";
 
 interface PropertyCardProps {
-  property: Property;
+  property: PropertyWithImages;
   index: number;
   onClick: () => void;
 }
@@ -16,8 +17,11 @@ const PropertyCard = ({ property, index, onClick }: PropertyCardProps) => {
     }).format(price);
   };
 
-  const images = getPropertyImages(property);
-  const imageUrl = images.length > 0 ? images[0] : "https://via.placeholder.com/400x300?text=No+Image";
+  const images = property.property_images || [];
+  const sortedImages = images
+    .sort((a: any, b: any) => a.display_order - b.display_order)
+    .map((img: any) => img.image_url);
+  const imageUrl = sortedImages.length > 0 ? sortedImages[0] : "https://via.placeholder.com/400x300?text=No+Image";
 
   return (
     <motion.article
