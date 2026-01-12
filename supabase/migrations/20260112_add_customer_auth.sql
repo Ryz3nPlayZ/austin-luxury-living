@@ -65,8 +65,12 @@ TO authenticated
 USING (true);
 
 -- Update leads policies to allow admins to manage all leads
--- Keep existing policy for submissions, add admin access
+-- Drop all existing leads policies first
+DROP POLICY IF EXISTS "Anyone can submit leads" ON public.leads;
 DROP POLICY IF EXISTS "Authenticated users can view leads" ON public.leads;
+DROP POLICY IF EXISTS "Authenticated users can delete leads" ON public.leads;
+DROP POLICY IF EXISTS "Authenticated users can view accessible leads" ON public.leads;
+DROP POLICY IF EXISTS "Users can view their own leads" ON public.leads;
 
 -- Leads: Anyone can submit (but we'll associate with user if authenticated)
 CREATE POLICY "Anyone can submit leads"
