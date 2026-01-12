@@ -48,7 +48,9 @@ export const AdminLeads = () => {
 
   const fetchLeads = async () => {
     setIsLoading(true);
-    const { data, error } = await supabase
+
+    // First try with the join (for better data)
+    const { data: joinedData, error: joinError } = await supabase
       .from("leads")
       .select(`
         *,
@@ -59,14 +61,26 @@ export const AdminLeads = () => {
       `)
       .order("created_at", { ascending: false });
 
-    if (error) {
-      toast({
-        title: "Error",
-        description: "Failed to load leads",
-        variant: "destructive",
-      });
+    if (!joinError && joinedData) {
+      setLeads(joinedData);
     } else {
-      setLeads(data || []);
+      // Fallback: fetch leads without properties join
+      console.warn("Failed to fetch leads with properties join, trying without join:", joinError);
+      const { data: simpleData, error: simpleError } = await supabase
+        .from("leads")
+        .select("*")
+        .order("created_at", { ascending: false });
+
+      if (simpleError) {
+        toast({
+          title: "Error",
+          description: "Failed to load leads",
+          variant: "destructive",
+        });
+        console.error("Failed to fetch leads:", simpleError);
+      } else {
+        setLeads(simpleData || []);
+      }
     }
     setIsLoading(false);
   };
