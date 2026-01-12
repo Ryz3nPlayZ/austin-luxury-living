@@ -25,9 +25,17 @@ const Login = () => {
   const { toast } = useToast();
   const { isAuthenticated, isAdmin, isLoadingProfile } = useSupabaseAuth();
 
-  // Note: We don't auto-redirect authenticated users after login
-  // Customers should stay on the main site, admins can access /admin when needed
-  // The redirect logic should be handled at the route level, not login level
+  // Redirect authenticated users based on their role after successful login
+  useEffect(() => {
+    if (isAuthenticated && !isLoadingProfile) {
+      if (isAdmin) {
+        navigate("/admin");
+      } else {
+        // Customers stay on the main site
+        navigate("/");
+      }
+    }
+  }, [isAuthenticated, isAdmin, isLoadingProfile, navigate]);
 
   const validateForm = () => {
     try {
